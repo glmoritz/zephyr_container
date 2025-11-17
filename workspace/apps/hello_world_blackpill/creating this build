@@ -1,0 +1,2 @@
+cp -r /opt/toolchains/zephyr/samples/hello_world /workspace/apps/hello_world_blackpill
+cd /workspace/apps/hello_world_blackpill && west build -p auto -b blackpill_f411ce

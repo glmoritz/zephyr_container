@@ -1,0 +1,33 @@
+services:
+  zephyr-dev:
+    # 1. Image to use, as specified in your original command
+    image: env-zephyr-espressif:latest
+    
+    # 2. Port mappings: host:container
+    # Port 2222 on host maps to SSH port 22 in container
+    # Port 8800 on host maps to port 8800 in container (for web servers/tools)
+    ports:
+      - "2222:22"
+      - "8800:8800"
+      
+    # 3. Volume mounting: Mounts the current directory's 'workspace' folder
+    # to the container's '/workspace' directory.
+    volumes:
+      - ./workspace:/workspace
+      
+    # 4. Set the working directory inside the container
+    working_dir: /workspace
+    
+    # 5. Keeps the container running and allows interactive access, similar to -it
+    # This is crucial for a development environment where you need a shell.
+    stdin_open: true # equivalent to -i
+    tty: true        # equivalent to -t
+
+    # 6. Optional: Specify a command to run when the container starts.
+    # We use 'bash' to drop you into a shell in the working directory.
+    command: /bin/bash
+    
+    # Optional: If you want the container to be removed automatically after stopping,
+    # you can use 'docker compose run --rm zephyr-dev bash' instead of 'docker compose up'
+    # The 'remove_orphans' setting helps keep things clean:
+    # remove_orphans: true
