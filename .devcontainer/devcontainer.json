@@ -10,13 +10,17 @@
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
         "nordic-semiconductor.nrf-devicetree",
-        "ms-vscode.hexeditor"
+        "ms-vscode.hexeditor",
+        "plorefice.devicetree"
       ]
     }
   },
   "forwardPorts": [],
   "workspaceMount": "source=${localWorkspaceFolder}/workspace,target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=/dev,target=/dev,type=bind"
+  ],
   // "postStartCommand": "code --file-uri /zephyr.code-workspace", // Does not work
   "runArgs": [
     "--name",
@@ -28,7 +32,8 @@
     "-p",
     "3333:3333",
     "-p",
-    "8800:8800"
+    "8800:8800",
+    "--privileged"
   ],
   "remoteUser": "root"
 }
