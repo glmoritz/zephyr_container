@@ -1,30 +1,211 @@
 {
+    "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug ESP32-S3",
+            "name": "Debug ESP32-S3 (as-is)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${input:elfPath}",
+            "preLaunchTask": "Debug: Restart OpenOCD (esp32s3-builtin)",
+            "postDebugTask": "Debug: Stop OpenOCD",
+            "program": "/workspace/zephyr.elf",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 2
+            },
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Force Xtensa architecture so GDB doesn't default to x86_64",
+                    "text": "set architecture xtensa",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Always use hardware breakpoints (flash/ROM not writable)",
+                    "text": "set breakpoint auto-hw on",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Tell GDB the ESP32-S3 hardware breakpoint limit",
+                    "text": "set remote hardware-breakpoint-limit 2",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Don't reject breakpoints in regions absent from OpenOCD's memory map (IROM shows 0KB until after flash probe)",
+                    "text": "set mem inaccessible-by-default off",
+                    "ignoreFailures": false
+                }
+            ],
+            "postRemoteConnectCommands": [
+                {
+                    "description": "Flash binary to device (leaves CPU halted on completion)",
+                    "text": "mon program_esp /workspace/zephyr.bin verify",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Flush GDB register/symbol cache so breakpoints resolve against the new flash map",
+                    "text": "maintenance flush register-cache",
+                    "ignoreFailures": false
+                }
+            ],
+            "launchCompleteCommand": "None"
+        },
+        {
+            "name": "Debug ESP32-S3 (flash first, attach)",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Debug: Flash then OpenOCD (esp32s3-builtin)",
+            "postDebugTask": "Debug: Stop OpenOCD",
+            "program": "/workspace/zephyr.elf",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 2
+            },
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set architecture xtensa",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set breakpoint auto-hw on",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set remote hardware-breakpoint-limit 2",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set mem inaccessible-by-default off",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Accept breakpoints in not-yet-mapped regions (resolves after flash probe)",
+                    "text": "set breakpoint pending on",
+                    "ignoreFailures": false
+                }
+            ],
+            "postRemoteConnectCommands": [
+                {
+                    "description": "Reset chip and keep halted — binary already in flash",
+                    "text": "mon reset halt",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Flush GDB register/symbol cache after reset",
+                    "text": "maintenance flush register-cache",
+                    "ignoreFailures": false
+                }
+            ],
+            "launchCompleteCommand": "None"
+        },
+        {
+            "name": "Debug ESP32-S3 (Start OpenOCD)",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Debug: Prepare ESP32-S3 Session",
+            "postDebugTask": "Debug: Stop OpenOCD",
+            "program": "${workspaceFolder}/zephyr.elf",
             "args": [],
             "stopAtEntry": true,
-            "cwd":  "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 2
+            },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.16.8/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
-            "miDebuggerServerAddress": "host.docker.internal:3333",
+            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
+                {
+                    "description": "Prevent GDB from pausing output",
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Use hardware breakpoints when needed (flash/ROM)",
+                    "text": "set breakpoint auto-hw on",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Pretty print for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "postRemoteConnectCommands": [
+                {
+                    "text": "set architecture xtensa",
+                    "ignoreFailures": true,
+                    "description": "Force Xtensa architecture in GDB"
+                },
+                {
+                    "text": "monitor halt",
+                    "ignoreFailures": true,
+                    "description": "Halt immediately upon connection"
+                },
+                {
+                    "text": "monitor reset halt",
+                    "ignoreFailures": false,
+                    "description": "Reset the chip and keep it halted"
+                },
+                {
+                    "text": "maintenance flush register-cache",
+                    "ignoreFailures": false,
+                    "description": "Clear GDB register cache"
+                }
+            ],
+            "launchCompleteCommand": "None"
+        },
+        {
+            "name": "Debug ESP32-S3 (Attach to running OpenOCD)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zephyr.elf",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 2
+            },
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "description": "Prevent GDB from pausing output",
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Use hardware breakpoints when needed (flash/ROM)",
+                    "text": "set breakpoint auto-hw on",
+                    "ignoreFailures": true
+                },
                 {
                     "description": "Pretty print for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
             ]
-        }
-    ],
-    "inputs": [
-        {
-            "id": "elfPath",
-            "type": "promptString",
-            "description": "Enter the path to the ELF file",
         }
     ]
 }

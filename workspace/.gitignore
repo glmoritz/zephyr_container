@@ -1,3 +1,8 @@
 # Zephyr build output directories (CMake/Ninja)
 build/
 **/build/
+
+# Local workspace state and nested repositories
+.vscode/.zephyr-active-project
+openocd-esp32/
+projects/

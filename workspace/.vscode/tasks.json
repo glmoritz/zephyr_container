@@ -68,6 +68,7 @@
       "args": [
         "-m",
         "serial.tools.miniterm",
+        "--raw",
         "/dev/ttyACM0",
         "115200"
       ],
@@ -79,6 +80,108 @@
         "panel": "shared"
       },
       "isBackground": true
+    },
+    {
+      "label": "Debug: OpenOCD (ESP32-S3 Built-in JTAG)",
+      "type": "shell",
+      "command": "openocd",
+      "args": [
+        "-f", "/workspace/boards/esp32s3-zephyr.cfg",
+        "-c", "init; reset halt; esp appimage_offset 0x0"
+      ],
+      "options": {
+        "cwd": "/workspace"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "owner": "custom",
+          "pattern": {
+            "regexp": "."
+          },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ".",
+            "endsPattern": "Listening on port 3333 for gdb connections"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Debug: OpenOCD (esp32s3-builtin)",
+      "type": "shell",
+      "command": "openocd",
+      "args": [
+        "-f", "/workspace/boards/esp32s3-zephyr.cfg",
+        "-c", "init; reset halt; esp appimage_offset 0x0"
+      ],
+      "options": {
+        "cwd": "/workspace"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "owner": "custom",
+          "pattern": {
+            "regexp": "."
+          },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ".",
+            "endsPattern": "Listening on port 3333 for gdb connections"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Debug: Restart OpenOCD (esp32s3-builtin)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Debug: Stop OpenOCD",
+        "Debug: OpenOCD (esp32s3-builtin)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug: Flash then OpenOCD (esp32s3-builtin)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Zephyr: Flash Active Project",
+        "Debug: Stop OpenOCD",
+        "Debug: OpenOCD (esp32s3-builtin)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug: Stop OpenOCD",
+      "type": "shell",
+      "command": "pkill -f 'openocd' || true",
+      "options": {
+        "cwd": "/workspace"
+      },
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug: Prepare ESP32-S3 Session",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Zephyr: Build Active Project",
+        "Debug: OpenOCD (ESP32-S3 Built-in JTAG)"
+      ],
+      "problemMatcher": []
     }
   ],
   "inputs": [
@@ -114,7 +217,8 @@
         "/workspace/apps/12_demo_custom_board",
         "/workspace/apps/12_solution_custom_board",
         "/workspace/apps/Zephyr_ESP32S3-N16R8",
-        "/workspace/apps/hello_world_blackpill"
+        "/workspace/apps/hello_world_blackpill",
+        "/workspace/projects/hello_eink"
       ]
     }
   ]

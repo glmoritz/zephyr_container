@@ -75,7 +75,17 @@ RUN apt-get -y update && \
         vim \
         nano \
         mc \
-        openssh-server
+        openssh-server \
+        make \
+        libtool \
+        pkg-config \
+        autoconf \
+        automake \
+        texinfo \
+        libusb-1.0-0-dev \
+        zlib1g-dev
+
+
 
 # Set root password
 RUN echo "root:${PASSWORD}" | chpasswd
@@ -153,17 +163,19 @@ WORKDIR /workspace
 # Install module-specific blobs with GitHub token and retry logic
 # (Prevents rate-limit issues when fetching from raw.githubusercontent.com)
 ARG GITHUB_TOKEN
-ENV GITHUB_TOKEN=${GITHUB_TOKEN}
 
 RUN cd /opt/toolchains && \
     echo "Fetching hal_espressif blobs..." && \
-    git config --global http.https://github.com/.extraheader "Authorization: Bearer ${GITHUB_TOKEN}" && \
+    if [ -n "${GITHUB_TOKEN}" ]; then \
+        git config --global http.https://github.com/.extraheader "Authorization: Bearer ${GITHUB_TOKEN}"; \
+    fi && \
     for i in {1..5}; do \
         west blobs fetch hal_espressif && break || { \
             echo "Fetch failed (attempt $i). Retrying in 15 seconds..."; \
             sleep 15; \
         }; \
-    done
+    done && \
+    git config --global --unset-all http.https://github.com/.extraheader || true
 
 #-------------------------------------------------------------------------------
 # Zephyr SDK
@@ -192,6 +204,15 @@ RUN cd /opt/toolchains/zephyr-sdk-${ZEPHYR_SDK_VERSION} && \
     tar xf hosttools_linux-${HOSTTYPE}.tar.xz && \
     rm hosttools_linux-${HOSTTYPE}.tar.xz && \
     bash zephyr-sdk-${HOSTTYPE}-hosttools-standalone-*.sh -y -d .
+
+# Build and install Espressif OpenOCD from source
+RUN cd /opt/toolchains && \
+    git -c http.https://github.com/.extraheader= clone --recursive https://github.com/espressif/openocd-esp32.git && \
+    cd openocd-esp32 && \
+    ./bootstrap && \
+    ./configure --enable-internal-jimtcl && \
+    make -j"$(nproc)" && \
+    make install
 
 #-------------------------------------------------------------------------------
 # VS Code Server

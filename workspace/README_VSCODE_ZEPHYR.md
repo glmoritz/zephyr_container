@@ -7,6 +7,7 @@ This workspace is configured so you can switch between Zephyr apps without manua
 - C/C++ IntelliSense reads compile commands from `/workspace/compile_commands.json`
 - `/workspace/compile_commands.json` is a symlink that points to the currently active app's `build/compile_commands.json`
 - `/workspace/zephyr.bin` is a symlink that points to the currently active app's firmware binary
+- `/workspace/projects/hello_eink` is a separate git repository kept inside the shared workspace tree for product-specific work
 - VS Code tasks call `/workspace/scripts/zephyr-project.sh` to manage the active app
 
 ## Board and build settings
@@ -33,6 +34,7 @@ When prompted, select the app from the dropdown list. The task terminal will ope
 /workspace/apps/01_blink
 /workspace/apps/03_demo_kconfig
 /workspace/apps/05_demo_adc
+/workspace/projects/hello_eink
 ```
 
 This updates the active-project state file:
