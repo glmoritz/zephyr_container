@@ -1,12 +1,12 @@
 # Zephyr development image for Espressif targets (e.g. ESP32)
 
 # Settings
-ARG DEBIAN_VERSION=stable-20251020-slim
+ARG DEBIAN_VERSION=stable-20260421
 ARG PASSWORD="zephyr"
 # Zephyr 3.7.0 is not working with ESP32S3, see: https://github.com/zephyrproject-rtos/zephyr/issues/71397
-ARG ZEPHYR_RTOS_VERSION=4.3.0
-ARG ZEPHYR_RTOS_COMMIT=3568e1b6d5cdd51a6b964a2a1d6d29200fea2056
-ARG ZEPHYR_SDK_VERSION=0.17.4
+ARG ZEPHYR_RTOS_VERSION=4.4.0
+ARG ZEPHYR_RTOS_COMMIT=684c9e8f32e4373a21098559f748f06915f950c9
+ARG ZEPHYR_SDK_VERSION=1.0.1
 ARG VS_CODE_SERVER_VERSION=4.105.1
 ARG VS_CODE_SERVER_PORT=8800
 ARG VS_CODE_EXT_CPPTOOLS_VERSION=1.28.3
@@ -56,35 +56,43 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install base packages
 RUN apt-get -y update && \
     apt-get install --no-install-recommends -y \
-        dos2unix \
-        ca-certificates \
-        file \
-        locales \
-        git \
-        build-essential \
-        cmake \
-        ninja-build gperf \
-        device-tree-compiler \
-        wget \
-        curl \
-        python3 \
-        python3-pip \
-        python3-venv \
-        xz-utils \
-        dos2unix \
-        vim \
-        nano \
-        mc \
-        openssh-server \
-        make \
-        libtool \
-        pkg-config \
         autoconf \
         automake \
-        texinfo \
+        build-essential \
+        ca-certificates \
+        ccache \
+        cmake \
+        curl \
+        device-tree-compiler \
+        dfu-util \
+        dos2unix \
+        file \
+        g++-multilib \
+        gcc \
+        gcc-multilib \
+        git \
+        gperf \
+        libmagic1 \
+        libsdl2-dev \
+        libtool \
         libusb-1.0-0-dev \
+        locales \
+        make \
+        mc \
+        nano \
+        ninja-build \
+        openssh-server \
+        pkg-config \
+        python3 \
+        python3-dev \
+        python3-pip \
+        python3-tk \
+        python3-venv \
+        texinfo \
+        vim \
+        wget \
+        xz-utils \
         zlib1g-dev
-
 
 
 # Set root password
@@ -124,41 +132,32 @@ EXPOSE 22
 # Set Zephyr environment variables
 ENV ZEPHYR_RTOS_VERSION=${ZEPHYR_RTOS_VERSION}
 
-# Install Zephyr 4.3 (official)
+# Clone Zephyr and check out the exact pinned revision.
 RUN cd /opt/toolchains && \
-    west init -m https://github.com/zephyrproject-rtos/zephyr --mr v${ZEPHYR_RTOS_VERSION} 
+    git clone https://github.com/zephyrproject-rtos/zephyr.git zephyr && \
+    cd zephyr && \
+    git checkout ${ZEPHYR_RTOS_COMMIT}
 
-WORKDIR /opt/toolchains/zephyr    
+WORKDIR /opt/toolchains
+RUN west init -l zephyr
+
+WORKDIR /opt/toolchains/zephyr
 RUN west update
-
 
 # Install Zephyr python deps
 RUN pip3 install -r /opt/toolchains/zephyr/scripts/requirements.txt
 
+RUN west zephyr-export
+
+RUN west packages pip --install
+
+RUN west sdk install
 # -----------------------------
 # Set environment
 # -----------------------------
 ENV ZEPHYR_BASE=/workspace/zephyr
 ENV PATH=$PATH:$ZEPHYR_BASE/scripts
 WORKDIR /workspace
-
-
-# # Install Zephyr
-# RUN cd /opt/toolchains && \
-#     git clone https://github.com/zephyrproject-rtos/zephyr.git && \
-#     cd zephyr && \
-#     git checkout ${ZEPHYR_RTOS_COMMIT} && \
-#     python3 -m pip install -r scripts/requirements-base.txt
-
-# # Override the west manifest to only install necessary modules
-# COPY scripts/espressif/west.yml /opt/toolchains/zephyr/west.yml
-
-# # Instantiate west workspace and install tools
-# RUN cd /opt/toolchains && \
-#     west init -l zephyr && \
-#     west update --narrow -o=--depth=1
-
-
 
 # Install module-specific blobs with GitHub token and retry logic
 # (Prevents rate-limit issues when fetching from raw.githubusercontent.com)
@@ -182,91 +181,6 @@ RUN cd /opt/toolchains && \
 
 # Set environment variables
 ENV ZEPHYR_SDK_VERSION=${ZEPHYR_SDK_VERSION}
-
-RUN cd /opt/toolchains && \
-    wget ${WGET_ARGS} https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-${HOSTTYPE}.tar.xz && \
-    tar xf zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-${HOSTTYPE}.tar.xz && \
-    rm zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-${HOSTTYPE}.tar.xz
-
-# # Install minimal Zephyr SDK
-# RUN cd /opt/toolchains && \
-#     wget ${WGET_ARGS} https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-${HOSTTYPE}_minimal.tar.xz && \
-#     tar xf zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-${HOSTTYPE}_minimal.tar.xz && \
-#     rm zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-${HOSTTYPE}_minimal.tar.xz
-
-# # Install Zephyr SDK for the specified toolchains
-# RUN cd /opt/toolchains/zephyr-sdk-${ZEPHYR_SDK_VERSION} && \
-#     bash setup.sh -c ${TOOLCHAIN_LIST}
-
-# Install host tools
-RUN cd /opt/toolchains/zephyr-sdk-${ZEPHYR_SDK_VERSION} && \
-    wget ${WGET_ARGS} https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/hosttools_linux-${HOSTTYPE}.tar.xz && \
-    tar xf hosttools_linux-${HOSTTYPE}.tar.xz && \
-    rm hosttools_linux-${HOSTTYPE}.tar.xz && \
-    bash zephyr-sdk-${HOSTTYPE}-hosttools-standalone-*.sh -y -d .
-
-# Build and install Espressif OpenOCD from source
-RUN cd /opt/toolchains && \
-    git -c http.https://github.com/.extraheader= clone --recursive https://github.com/espressif/openocd-esp32.git && \
-    cd openocd-esp32 && \
-    ./bootstrap && \
-    ./configure --enable-internal-jimtcl && \
-    make -j"$(nproc)" && \
-    make install
-
-#-------------------------------------------------------------------------------
-# VS Code Server
-
-# Set VS Code Server environment variables
-ENV VS_CODE_SERVER_VERSION=${VS_CODE_SERVER_VERSION}
-ENV VS_CODE_SERVER_PORT=${VS_CODE_SERVER_PORT}
-
-# Install VS Code Server
-RUN cd /tmp && \
-    wget ${WGET_ARGS} https://code-server.dev/install.sh && \
-    chmod +x install.sh && \
-    bash install.sh --version ${VS_CODE_SERVER_VERSION}
-
-# Step 18: Download cpptools (Required for caching)
-RUN cd /tmp && \
-    if [ "$TARGETARCH" = "amd64" ]; then \
-        wget ${WGET_ARGS} https://github.com/microsoft/vscode-cpptools/releases/download/v${VS_CODE_EXT_CPPTOOLS_VERSION}/cpptools-linux-x64.vsix -O cpptools.vsix; \
-    elif [ "$TARGETARCH" = "arm64" ]; then \
-        wget ${WGET_ARGS} https://github.com/microsoft/vscode-cpptools/releases/download/v${VS_CODE_EXT_CPPTOOLS_VERSION}/cpptools-linux-arm64.vsix -O cpptools.vsix; \
-    else \
-        echo "Unsupported architecture"; \
-        exit 1; \
-    fi
-
-# New Step 19: Download cmake-tools
-RUN cd /tmp && \
-    wget ${WGET_ARGS} https://github.com/microsoft/vscode-cmake-tools/releases/download/v${VS_CODE_EXT_CMAKETOOLS_VERSION}/cmake-tools.vsix -O cmake-tools.vsix
-
-# New Step 20: Download hexeditor
-RUN cd /tmp && \
-    wget --compression=gzip ${WGET_ARGS} https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-vscode/vsextensions/hexeditor/${VS_CODE_EXT_HEX_EDITOR_VERSION}/vspackage -O hexeditor.vsix
-
-# New Step 21: Download nrf-devicetree (The persistent failure point)
-RUN cd /tmp && \
-    wget --compression=gzip https://marketplace.visualstudio.com/_apis/public/gallery/publishers/nordic-semiconductor/vsextensions/nrf-devicetree/${VS_CODE_EXT_NRF_DEVICETREE_VERSION}/vspackage -O nordic-semiconductor.nrf-devicetree.vsix
-
-# Install extensions
-RUN cd /tmp && \
-    code-server --install-extension cpptools.vsix && \
-    code-server --install-extension cmake-tools.vsix && \
-    code-server --install-extension hexeditor.vsix && \
-    code-server --install-extension nordic-semiconductor.nrf-devicetree.vsix
-
-# Clean up
-RUN cd /tmp && \
-    rm install.sh && \
-    rm cpptools.vsix && \
-    rm cmake-tools.vsix && \
-    rm hexeditor.vsix && \
-    rm nordic-semiconductor.nrf-devicetree.vsix
-
-# Copy workspace configuration
-COPY scripts/zephyr.code-workspace /zephyr.code-workspace
 
 #-------------------------------------------------------------------------------
 # Optional Settings
@@ -293,8 +207,6 @@ RUN echo "source ${VIRTUAL_ENV}/bin/activate" >> /root/.bashrc && \
 RUN echo "export ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-0.17.4/" >> /root/.bashrc
 RUN python3 -m pip install esptool
 #RUN west packages pip --install
-
-
 
 # Custom entrypoint
 COPY scripts/entrypoint.sh /entrypoint.sh
