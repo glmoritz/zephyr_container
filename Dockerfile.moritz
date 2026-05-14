@@ -176,6 +176,15 @@ RUN cd /opt/toolchains && \
     done && \
     git config --global --unset-all http.https://github.com/.extraheader || true
 
+# Build and install Espressif OpenOCD from source
+RUN cd /opt/toolchains && \
+    git -c http.https://github.com/.extraheader= clone --recursive https://github.com/espressif/openocd-esp32.git && \
+    cd openocd-esp32 && \
+    ./bootstrap && \
+    ./configure --enable-internal-jimtcl && \
+    make -j"$(nproc)" && \
+    make install
+
 #-------------------------------------------------------------------------------
 # Zephyr SDK
 
