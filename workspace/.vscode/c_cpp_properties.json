@@ -14,7 +14,7 @@
                 "limitSymbolsToIncludedHeaders": true
             },
             "compileCommands": "/workspace/compile_commands.json",
-            "compilerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gcc",
+            "compilerPath": "/workspace/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "linux-gcc-x64"

@@ -6,12 +6,11 @@
       "type": "shell",
       "command": "bash",
       "args": [
-        "/workspace/scripts/zephyr-project.sh",
-        "set",
-        "${input:zephyrAppDir}"
+        "${workspaceFolder}/scripts/zephyr-project.sh",
+        "set"
       ],
       "options": {
-        "cwd": "/workspace"
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "always",
@@ -24,11 +23,11 @@
       "type": "shell",
       "command": "bash",
       "args": [
-        "/workspace/scripts/zephyr-project.sh",
+        "${workspaceFolder}/scripts/zephyr-project.sh",
         "build"
       ],
       "options": {
-        "cwd": "/workspace"
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "always",
@@ -48,12 +47,12 @@
       "type": "shell",
       "command": "bash",
       "args": [
-        "/workspace/scripts/zephyr-project.sh",
+        "${workspaceFolder}/scripts/zephyr-project.sh",
         "flash",
         "/dev/ttyACM0"
       ],
       "options": {
-        "cwd": "/workspace"
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "always",
@@ -73,7 +72,7 @@
         "115200"
       ],
       "options": {
-        "cwd": "/workspace/apps/01_blink"
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "always",
@@ -82,15 +81,17 @@
       "isBackground": true
     },
     {
-      "label": "Debug: OpenOCD (ESP32-S3 Built-in JTAG)",
+      "label": "Debug: OpenOCD (Active Project)",
       "type": "shell",
       "command": "openocd",
       "args": [
-        "-f", "/workspace/boards/esp32s3-zephyr.cfg",
-        "-c", "init; reset halt; esp appimage_offset 0x0"
+        "-f",
+        "/workspace/boards/esp32s3-zephyr.cfg",
+        "-c",
+        "init; reset halt; esp appimage_offset 0x0"
       ],
       "options": {
-        "cwd": "/workspace"
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "always",
@@ -112,15 +113,17 @@
       ]
     },
     {
-      "label": "Debug: OpenOCD (esp32s3-builtin)",
+      "label": "Debug: OpenOCD (Active Project, Dedicated Panel)",
       "type": "shell",
       "command": "openocd",
       "args": [
-        "-f", "/workspace/boards/esp32s3-zephyr.cfg",
-        "-c", "init; reset halt; esp appimage_offset 0x0"
+        "-f",
+        "/workspace/boards/esp32s3-zephyr.cfg",
+        "-c",
+        "init; reset halt; esp appimage_offset 0x0"
       ],
       "options": {
-        "cwd": "/workspace"
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "always",
@@ -143,21 +146,21 @@
       ]
     },
     {
-      "label": "Debug: Restart OpenOCD (esp32s3-builtin)",
+      "label": "Debug: Restart OpenOCD (Active Project)",
       "dependsOrder": "sequence",
       "dependsOn": [
         "Debug: Stop OpenOCD",
-        "Debug: OpenOCD (esp32s3-builtin)"
+        "Debug: OpenOCD (Active Project, Dedicated Panel)"
       ],
       "problemMatcher": []
     },
     {
-      "label": "Debug: Flash then OpenOCD (esp32s3-builtin)",
+      "label": "Debug: Flash then OpenOCD (Active Project)",
       "dependsOrder": "sequence",
       "dependsOn": [
         "Zephyr: Flash Active Project",
         "Debug: Stop OpenOCD",
-        "Debug: OpenOCD (esp32s3-builtin)"
+        "Debug: OpenOCD (Active Project, Dedicated Panel)"
       ],
       "problemMatcher": []
     },
@@ -166,7 +169,7 @@
       "type": "shell",
       "command": "pkill -f 'openocd' || true",
       "options": {
-        "cwd": "/workspace"
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "never",
@@ -179,47 +182,9 @@
       "dependsOrder": "sequence",
       "dependsOn": [
         "Zephyr: Build Active Project",
-        "Debug: OpenOCD (ESP32-S3 Built-in JTAG)"
+        "Debug: OpenOCD (Active Project)"
       ],
       "problemMatcher": []
-    }
-  ],
-  "inputs": [
-    {
-      "id": "zephyrAppDir",
-      "type": "pickString",
-      "description": "Select the Zephyr app to make active",
-      "default": "/workspace/apps/01_blink",
-      "options": [
-        "/workspace/apps/01_blink",
-        "/workspace/apps/02_demo_cmake",
-        "/workspace/apps/02_solution_hello_blink",
-        "/workspace/apps/03_demo_kconfig",
-        "/workspace/apps/03_solution_kconfig_float",
-        "/workspace/apps/04_demo_button",
-        "/workspace/apps/04_solution_button_led",
-        "/workspace/apps/05_demo_adc",
-        "/workspace/apps/05_solution_pwm_knob",
-        "/workspace/apps/06_demo_device_driver",
-        "/workspace/apps/06_solution_i2c_driver",
-        "/workspace/apps/07_solution_usb_print",
-        "/workspace/apps/08_demo_multithreading",
-        "/workspace/apps/08_demo_mutex",
-        "/workspace/apps/08_solution_sensor_queue",
-        "/workspace/apps/09_demo_counter_interrupt",
-        "/workspace/apps/09_demo_gpio_interrupt",
-        "/workspace/apps/09_demo_timer",
-        "/workspace/apps/09_solution_workqueue",
-        "/workspace/apps/10_demo_display",
-        "/workspace/apps/10_solution_animation",
-        "/workspace/apps/11_demo_wifi",
-        "/workspace/apps/11_solution_http",
-        "/workspace/apps/12_demo_custom_board",
-        "/workspace/apps/12_solution_custom_board",
-        "/workspace/apps/Zephyr_ESP32S3-N16R8",
-        "/workspace/apps/hello_world_blackpill",
-        "/workspace/projects/hello_eink"
-      ]
     }
   ]
 }

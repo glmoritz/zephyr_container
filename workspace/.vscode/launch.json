@@ -5,9 +5,9 @@
             "name": "Debug ESP32-S3 (as-is)",
             "type": "cppdbg",
             "request": "launch",
-            "preLaunchTask": "Debug: Restart OpenOCD (esp32s3-builtin)",
+            "preLaunchTask": "Debug: Restart OpenOCD (Active Project)",
             "postDebugTask": "Debug: Stop OpenOCD",
-            "program": "/workspace/zephyr.elf",
+            "program": "${workspaceFolder}/zephyr.elf",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -16,7 +16,7 @@
                 "limit": 2
             },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gdb",
             "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
                 {
@@ -47,7 +47,7 @@
             "postRemoteConnectCommands": [
                 {
                     "description": "Flash binary to device (leaves CPU halted on completion)",
-                    "text": "mon program_esp /workspace/zephyr.bin verify",
+                    "text": "mon program_esp ${workspaceFolder}/zephyr.bin verify",
                     "ignoreFailures": false
                 },
                 {
@@ -62,9 +62,9 @@
             "name": "Debug ESP32-S3 (flash first, attach)",
             "type": "cppdbg",
             "request": "launch",
-            "preLaunchTask": "Debug: Flash then OpenOCD (esp32s3-builtin)",
+            "preLaunchTask": "Debug: Flash then OpenOCD (Active Project)",
             "postDebugTask": "Debug: Stop OpenOCD",
-            "program": "/workspace/zephyr.elf",
+            "program": "${workspaceFolder}/zephyr.elf",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -73,7 +73,7 @@
                 "limit": 2
             },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gdb",
             "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
                 {
@@ -131,7 +131,7 @@
                 "limit": 2
             },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gdb",
             "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
                 {
@@ -187,7 +187,7 @@
                 "limit": 2
             },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gdb",
             "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
                 {
