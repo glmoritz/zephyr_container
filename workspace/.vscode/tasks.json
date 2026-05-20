@@ -81,6 +81,37 @@
       "isBackground": true
     },
     {
+      "label": "Zephyr: Monitor (miniterm, Dedicated Panel)",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "serial.tools.miniterm",
+        "--raw",
+        "/dev/ttyACM0",
+        "115200"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Zephyr: Flash then Monitor",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Zephyr: Flash Active Project",
+        "Zephyr: Monitor (miniterm, Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "Debug: OpenOCD (Active Project)",
       "type": "shell",
       "command": "openocd",
@@ -184,6 +215,109 @@
         "Zephyr: Build Active Project",
         "Debug: OpenOCD (Active Project)"
       ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Build",
+      "type": "shell",
+      "command": "west",
+      "args": [
+        "build",
+        "-p",
+        "auto",
+        "-b",
+        "native_sim/native/64",
+        "-d",
+        "build-sim"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/projects/hello_eink",
+        "env": {
+          "ZEPHYR_BASE": "/opt/toolchains/zephyr"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Native sim: Run + Monitor (Dedicated Panel)",
+      "type": "shell",
+      "command": "./scripts/run_native_sim.sh",
+      "args": [
+        "-uart_stdinout"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/projects/hello_eink"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Build then Run + Monitor",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Native sim: Build",
+        "Native sim: Run + Monitor (Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Run with gdbserver (Dedicated Panel)",
+      "type": "shell",
+      "command": "gdbserver",
+      "args": [
+        "--once",
+        ":2331",
+        "${workspaceFolder}/projects/hello_eink/build-sim/zephyr/zephyr.exe",
+        "-eth-if=zeth",
+        "-flash=${workspaceFolder}/projects/hello_eink/build-sim/hello_eink_flash.bin",
+        "-uart_stdinout"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/projects/hello_eink"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "owner": "custom",
+          "pattern": {
+            "regexp": "."
+          },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ".",
+            "endsPattern": "^Listening on port"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Native sim: Stop gdbserver",
+      "type": "shell",
+      "command": "pkill -f 'gdbserver :2331' || true; pkill -f 'build-sim/zephyr/zephyr.exe' || true",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      },
       "problemMatcher": []
     }
   ]

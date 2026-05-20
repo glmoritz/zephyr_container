@@ -18,8 +18,16 @@
   "forwardPorts": [],
   "workspaceMount": "source=${localWorkspaceFolder}/workspace,target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
+  "containerEnv": {
+    // Forward the host X server / Xwayland display so the native_sim
+    // SDL window appears on the host desktop. Works under both an X11
+    // session and a Wayland session (Xwayland provides the socket on
+    // Wayland — Ubuntu 24.04 and 26.04 both ship it by default).
+    "DISPLAY": "${localEnv:DISPLAY}"
+  },
   "mounts": [
-    "source=/dev,target=/dev,type=bind"
+    "source=/dev,target=/dev,type=bind",
+    "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind"
   ],
   // "postStartCommand": "code --file-uri /zephyr.code-workspace", // Does not work
   "runArgs": [
