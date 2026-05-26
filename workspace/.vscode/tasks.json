@@ -246,42 +246,24 @@
       ]
     },
     {
-      "label": "Native sim: Run + Monitor (Dedicated Panel)",
+      "label": "Native sim: Setup network",
       "type": "shell",
-      "command": "./scripts/run_native_sim.sh",
-      "args": [
-        "-uart_stdinout"
-      ],
+      "command": "./scripts/setup_net_sim.sh",
       "options": {
         "cwd": "${workspaceFolder}/projects/hello_eink"
       },
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated",
+        "panel": "shared",
         "clear": true
       },
-      "isBackground": true,
       "problemMatcher": []
     },
     {
-      "label": "Native sim: Build then Run + Monitor",
-      "dependsOrder": "sequence",
-      "dependsOn": [
-        "Native sim: Build",
-        "Native sim: Run + Monitor (Dedicated Panel)"
-      ],
-      "problemMatcher": []
-    },
-    {
-      "label": "Native sim: Run with gdbserver (Dedicated Panel)",
+      "label": "Native sim: Run + Monitor (Dedicated Panel)",
       "type": "shell",
-      "command": "gdbserver",
+      "command": "./scripts/run_native_sim.sh",
       "args": [
-        "--once",
-        ":2331",
-        "${workspaceFolder}/projects/hello_eink/build-sim/zephyr/zephyr.exe",
-        "-eth-if=zeth",
-        "-flash=${workspaceFolder}/projects/hello_eink/build-sim/hello_eink_flash.bin",
         "-uart_stdinout"
       ],
       "options": {
@@ -302,15 +284,81 @@
           "background": {
             "activeOnStart": true,
             "beginsPattern": ".",
-            "endsPattern": "^Listening on port"
+            "endsPattern": "uart:~\\$"
           }
         }
       ]
     },
     {
-      "label": "Native sim: Stop gdbserver",
+      "label": "Native sim: Build then Run + Monitor",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Native sim: Build",
+        "Native sim: Setup network",
+        "Native sim: Run + Monitor (Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Build + Setup network",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Native sim: Build",
+        "Native sim: Setup network"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Restart + Monitor (Dedicated Panel)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Native sim: Stop native sim",
+        "Native sim: Setup network",
+        "Native sim: Run + Monitor (Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Build then Restart + Monitor",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Native sim: Build",
+        "Native sim: Restart + Monitor (Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Telnet Shell (Dedicated Panel)",
       "type": "shell",
-      "command": "pkill -f 'gdbserver :2331' || true; pkill -f 'build-sim/zephyr/zephyr.exe' || true",
+      "command": "telnet",
+      "args": [
+        "192.0.2.1",
+        "23"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/projects/hello_eink"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Setup network + Telnet Shell",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Native sim: Setup network",
+        "Native sim: Telnet Shell (Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Native sim: Stop native sim",
+      "type": "shell",
+      "command": "pkill -f 'build-sim/zephyr/zephyr.exe' || true",
       "options": {
         "cwd": "${workspaceFolder}"
       },

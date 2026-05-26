@@ -175,9 +175,11 @@
             "launchCompleteCommand": "None"
         },
         {
-            "name": "Debug native_sim (hello_eink)",
+            "name": "Debug native_sim (hello_eink, normal launch)",
             "type": "cppdbg",
             "request": "launch",
+            "preLaunchTask": "Native sim: Build + Setup network",
+            "postDebugTask": "Native sim: Stop native sim",
             "program": "${workspaceFolder}/projects/hello_eink/build-sim/zephyr/zephyr.exe",
             "args": [
                 "-eth-if=zeth",
@@ -205,24 +207,25 @@
                     "text": "set breakpoint pending on",
                     "ignoreFailures": true
                 }
-            ],
-            "comment": "Requires: west build -b native_sim/native/64 -d build-sim && ./scripts/setup_net_sim.sh"
+            ]
         },
         {
-            "name": "Debug native_sim (hello_eink, with console panel)",
+            "name": "Debug native_sim (hello_eink, use Telnet shell task)",
             "type": "cppdbg",
             "request": "launch",
-            "preLaunchTask": "Native sim: Run with gdbserver (Dedicated Panel)",
-            "postDebugTask": "Native sim: Stop gdbserver",
+            "preLaunchTask": "Native sim: Build + Setup network",
+            "postDebugTask": "Native sim: Stop native sim",
             "program": "${workspaceFolder}/projects/hello_eink/build-sim/zephyr/zephyr.exe",
-            "args": [],
+            "args": [
+                "-eth-if=zeth",
+                "-flash=${workspaceFolder}/projects/hello_eink/build-sim/hello_eink_flash.bin"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/projects/hello_eink",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb",
-            "miDebuggerServerAddress": "localhost:2331",
             "setupCommands": [
                 {
                     "description": "Disable pagination",
@@ -239,9 +242,35 @@
                     "text": "set breakpoint pending on",
                     "ignoreFailures": true
                 }
-            ],
-            "launchCompleteCommand": "None",
-            "comment": "Runs zephyr.exe under gdbserver in a dedicated VS Code panel. The Zephyr console (logs + shell, via -uart_stdinout) appears in that panel so you can read output and type commands while paused in the debugger. Requires: west build -b native_sim/native/64 -d build-sim && ./scripts/setup_net_sim.sh"
+            ]
+        },
+        {
+            "name": "Debug native_sim (hello_eink, with console panel)",
+            "type": "cppdbg",
+            "request": "attach",
+            "preLaunchTask": "Native sim: Build then Restart + Monitor",
+            "postDebugTask": "Native sim: Stop native sim",
+            "program": "${workspaceFolder}/projects/hello_eink/build-sim/zephyr/zephyr.exe",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Disable pagination",
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Enable pretty printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Pending breakpoints so symbols resolve after shared libs load",
+                    "text": "set breakpoint pending on",
+                    "ignoreFailures": true
+                }
+            ]
         },
         {
             "name": "Debug ESP32-S3 (Attach to running OpenOCD)",
