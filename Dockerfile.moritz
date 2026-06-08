@@ -96,6 +96,7 @@ RUN apt-get -y update && \
         python3-tk \
         python3-venv \
         radvd \
+        telnet \
         texinfo \
         vim \
         wget \
