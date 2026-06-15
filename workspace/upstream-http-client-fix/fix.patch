@@ -1,0 +1,21 @@
+diff --git a/subsys/net/lib/http/http_client.c b/subsys/net/lib/http/http_client.c
+index 2937d0b289e..09b49f853b6 100644
+--- a/subsys/net/lib/http/http_client.c
++++ b/subsys/net/lib/http/http_client.c
+@@ -545,7 +545,15 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
+ 				goto error;
+ 			}
+
+-			if (req->internal.parser.http_errno != HPE_OK) {
++			/* A parser error is only fatal if the message did not
++			 * complete. Once message_complete is set, the response has
++			 * been fully parsed; a subsequent errno (e.g. INVALID_CONSTANT)
++			 * comes from the parser resetting to expect the next message
++			 * on a keep-alive connection and then choking on trailing bytes
++			 * that belong to the caller (exposed via data_len). Discarding a
++			 * complete response in that case is wrong. */
++			if (req->internal.parser.http_errno != HPE_OK &&
++			    !req->internal.response.message_complete) {
+ 				LOG_ERR("HTTP parsing error, %d",
+ 					req->internal.parser.http_errno);
+ 				ret = -EBADMSG;

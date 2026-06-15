@@ -1,0 +1,142 @@
+diff --git a/tests/net/lib/http_client/src/main.c b/tests/net/lib/http_client/src/main.c
+index 15df71375a1..fc48544718f 100644
+--- a/tests/net/lib/http_client/src/main.c
++++ b/tests/net/lib/http_client/src/main.c
+@@ -589,3 +589,137 @@ ZTEST(http_client_chunked_te, test_body_frag_len_chunked_te)
+
+ ZTEST_SUITE(http_client_chunked_te, NULL, NULL,
+ 	    chunked_tests_before, chunked_tests_after, NULL);
++
++/* ------------------------------------------------------------------------
++ * Regression repro (eink device): a COMPLETE keep-alive HTTP/1.1 response
++ * (Content-Length delimited) followed by a stray trailing byte in the SAME
++ * recv buffer. The recv loop (reworked in 4a85e470617) parses the whole
++ * buffer from the base each iteration and checks parser->http_errno BEFORE
++ * honoring message_complete. After the 409 completes, NEW_MESSAGE() resets
++ * the parser to s_start_res (keep-alive); the trailing X is not H/CR/LF
++ * -> HPE_INVALID_CONSTANT (errno 30) -> http_client returns -EBADMSG,
++ * discarding the already-parsed 409. Mirrors a real ESP32 failing to
++ * register (server 409 "already registered"), net_http_client "parsing
++ * error, 30".
++ */
++#define TRAILER_SERVER_PORT 8083
++
++static const char trailing_byte_response[] =
++	"HTTP/1.1 409 Conflict\r\n"
++	"Content-Type: text/plain\r\n"
++	"Content-Length: 8\r\n"
++	"\r\n"
++	"conflict"  /* complete, Content-Length-delimited body */
++	"X";        /* stray trailing byte: start of a bogus 2nd response */
++
++static K_THREAD_STACK_DEFINE(trailer_srv_stack, 1024);
++static struct k_thread trailer_srv_thread;
++static K_SEM_DEFINE(trailer_srv_ready, 0, 1);
++
++static void trailer_srv_fn(void *p1, void *p2, void *p3)
++{
++	struct net_sockaddr_in6 sa = { 0 };
++	char req_buf[256];
++	int srv, conn, ret;
++
++	ARG_UNUSED(p1); ARG_UNUSED(p2); ARG_UNUSED(p3);
++
++	srv = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
++	if (srv < 0) {
++		return;
++	}
++	sa.sin6_family = NET_AF_INET6;
++	sa.sin6_port = net_htons(TRAILER_SERVER_PORT);
++	ret = zsock_inet_pton(NET_AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
++	if (ret != 1) {
++		zsock_close(srv);
++		return;
++	}
++	if (zsock_bind(srv, (struct net_sockaddr *)&sa, sizeof(sa)) < 0) {
++		zsock_close(srv);
++		return;
++	}
++	zsock_listen(srv, 1);
++	k_sem_give(&trailer_srv_ready);
++
++	conn = zsock_accept(srv, NULL, NULL);
++	if (conn >= 0) {
++		(void)zsock_recv(conn, req_buf, sizeof(req_buf) - 1, 0);
++		/* Deliver the complete response AND the trailing byte in one
++		 * send so they land in the same client recv buffer. */
++		(void)zsock_send(conn, trailing_byte_response,
++				 sizeof(trailing_byte_response) - 1, 0);
++		zsock_close(conn);
++	}
++	zsock_close(srv);
++}
++
++static int trailer_client_fd = -1;
++static uint8_t trailer_recv_buf[256];
++static uint8_t trailer_response_buf[256];
++
++static void trailer_tests_before(void *fixture)
++{
++	struct net_sockaddr_in6 sa = { 0 };
++	int ret;
++
++	ARG_UNUSED(fixture);
++	memset(trailer_recv_buf, 0, sizeof(trailer_recv_buf));
++	memset(trailer_response_buf, 0, sizeof(trailer_response_buf));
++
++	k_thread_create(&trailer_srv_thread, trailer_srv_stack,
++			K_THREAD_STACK_SIZEOF(trailer_srv_stack),
++			trailer_srv_fn, NULL, NULL, NULL,
++			K_PRIO_PREEMPT(7), 0, K_NO_WAIT);
++	ret = k_sem_take(&trailer_srv_ready, K_SECONDS(5));
++	zassert_equal(ret, 0, "trailer server did not start in time");
++
++	trailer_client_fd = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
++	zassert_true(trailer_client_fd >= 0, "client socket failed");
++
++	sa.sin6_family = NET_AF_INET6;
++	sa.sin6_port = net_htons(TRAILER_SERVER_PORT);
++	ret = zsock_inet_pton(NET_AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
++	zassert_equal(ret, 1, "inet_pton failed");
++	ret = zsock_connect(trailer_client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
++	zassert_equal(ret, 0, "connect failed (%d)", errno);
++}
++
++static void trailer_tests_after(void *fixture)
++{
++	ARG_UNUSED(fixture);
++	if (trailer_client_fd >= 0) {
++		(void)zsock_close(trailer_client_fd);
++		trailer_client_fd = -1;
++	}
++	k_thread_join(&trailer_srv_thread, K_SECONDS(5));
++}
++
++ZTEST(http_client_trailing_byte, test_keepalive_response_with_trailing_byte)
++{
++	struct http_request req = { 0 };
++	struct test_ctx ctx = { 0 };
++	int ret;
++
++	req.method = HTTP_GET;
++	req.url = "/api/auth/devices/register";
++	req.host = SERVER_IPV6_ADDR;
++	req.protocol = "HTTP/1.1";
++	req.response = response_cb;
++	req.recv_buf = trailer_recv_buf;
++	req.recv_buf_len = sizeof(trailer_recv_buf);
++
++	ctx.buf = trailer_response_buf;
++	ctx.buflen = sizeof(trailer_response_buf);
++
++	ret = http_client_req(trailer_client_fd, &req, -1, &ctx);
++
++	/* Desired (post-fix): a complete response was received; the trailing
++	 * byte must NOT discard it. Pre-fix this fails with ret=-EBADMSG. */
++	zassert_true(ret > 0, "http_client_req() failed (%d) -- trailing byte discarded a complete response", ret);
++	zassert_true(ctx.final, "No final event for a complete response");
++	zassert_equal(ctx.status, 409, "Unexpected HTTP status (%d)", ctx.status);
++}
++
++ZTEST_SUITE(http_client_trailing_byte, NULL, NULL,
++	    trailer_tests_before, trailer_tests_after, NULL);
