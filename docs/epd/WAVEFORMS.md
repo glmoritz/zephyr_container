@@ -105,16 +105,57 @@ epd floor 0             # disable auto full floor during experiments
 
 ### Results log
 
-(append findings here as hardware tests run)
+**2026-07-04, the mode-1 investigation.** Chronology of a wrong theory dying
+three times (kept as a teaching record):
 
-## 5. Decisions (to be confirmed by the matrix)
+1. OTP full (`0xF7`) passed every synthetic test (checker, digits after the
+   gauntlet, power-cut retention on `0xD7@0x6A`), but **washed out the real
+   chess frame** — pieces gray, dither mush — while a mode-2 partial of the
+   *same framebuffer* rendered it crisply. Repeating `0xF7` compounded the
+   damage (smears, half-erased regions).
+2. Ruled out one by one, on glass: RAM plane divergence (`epd cmp`: BW==RED,
+   bit-for-bit equal to the server PNG), RED-as-old-state indexing (`0x21`
+   bypass — no change), gray/inverted row indexing (`gradient`/`digits`
+   through `0xF7` — correct), booster load (full-screen 1-px dither = *worst*
+   load = fine), interlace bit (SM=0 scrambled geometry → SM=1 is correct
+   wiring), temperature banks (0x00/0x0A/0x19/0x6A/0x7F — all bad on the
+   failing content), voltage/booster lifts (`0x03/0x04/0x0C` — no change).
+3. `hlines` vs `vlines` cracked it: **fine detail across gate lines mangles
+   in every mode-1 sequence; along gate lines it's perfect; mode-2 always
+   renders both.** Rows whose source data flips against the previous gate
+   line are under-driven — a per-line drive weakness at the mode-1 banks'
+   line timing, present on this unit at every temperature bank. All earlier
+   synthetic "passes" were patterns invariant under exactly this defect
+   (a blurred 1-px checker *is* uniform gray; blurred block edges are
+   invisible). Test-design lesson: symmetric patterns can't catch asymmetric
+   defects.
+4. Also established: `0xD7@0x6A` retention across power-cut = OK; OTP DU
+   partial retention = fades (shallow drive, expected physics); `0x19` bank
+   leaves ghost.
 
-- Full = vendor OTP `0xF7`; drop the borrowed 3.7" LUT once confirmed.
-- New fast-full = `0x1A` bank + `0xD7` for move-confirmed / view-toggle
-  refreshes (`UI_CTX_SWITCH`).
-- Partial: `0xFC → 0xFF` (power down between updates); keep prev/new dual-RAM
-  + post-refresh re-sync (it's more careful than the vendor's).
+**Resolution: the full refresh is a hand-built mode-2 GC LUT**
+(`lut_gc_mode2` in the driver, `0x22=0xCF`) at the frame rate the old
+borrowed 3.7" LUT had already proven this unit can settle (FR nibble 0x2).
+4 synchronized inversion flashes + symmetric 20-frame sets, cross-balanced
+±20f, VCOM DC. Validated on glass: crisp `hlines`, crisp chess frame, ghost
+gauntlet clean, **power-cut retention OK**, 1965 ms. This is also why the
+"wrong" 3.7" LUT looked structurally fine for months: any mode-2 waveform
+sidesteps the mode-1 defect. Audit tool: `scripts/lut_check.py`.
+
+## 5. Architecture (as validated)
+
+- **Full** = `lut_gc_mode2` custom mode-2 GC (`0xCF`), the ghost eraser and
+  pre-sleep consolidation. OTP `0xF7` kept behind
+  `LLSS_DISPLAY_USE_CUSTOM_FULL_LUT=n` for A/B only — defective on this unit.
+- **Partial** = OTP DU (`0xFC`), unchanged: fast UI responsiveness while
+  powered; retention irrelevant between frequent updates.
+- **Deep partial** = `lut_du_deep` custom mode-2, transition-indexed: drives
+  only changed pixels, but to GC-grade saturation (bistable-deep). For the
+  deep-sleep clock: digits-only flicker, no full-screen flash, retains
+  through power-off. Scheduled fulls (screensaver half-hour flash) remain the
+  DC/ghost hygiene.
+- **Incremental gray** (crosspoint/freeink mechanism): `lut_gray_enhance`
+  drives only gray-coded pixels on top of a displayed BW page;
+  `lut_gray_revert` returns them to B/W before the next BW update.
 - Border tracked per mode: full `0x01`, partial `0x80`.
-- Add `power_down()` + `deep_sleep()`; consolidation full before sleep.
-- 4-gray later via the OTP `0x5A` bank (vendor packing), not a custom LUT;
-  freeink's differential gray enhance/revert LUTs are the stretch goal.
+- Still queued: `power_down()`/`deep_sleep()` (0x22=0x03 + 0x10=0x01) wiring.
