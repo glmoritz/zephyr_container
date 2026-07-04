@@ -159,3 +159,16 @@ sidesteps the mode-1 defect. Audit tool: `scripts/lut_check.py`.
   `lut_gray_revert` returns them to B/W before the next BW update.
 - Border tracked per mode: full `0x01`, partial `0x80`.
 - Still queued: `power_down()`/`deep_sleep()` (0x22=0x03 + 0x10=0x01) wiring.
+
+### Gray/deep-partial calibration notes (this unit, glass-tested 2026-07-04)
+
+- Frame-rate nibble 0x2 is the only rate where mid-gray states are STABLE;
+  at 0x8 the short pulses sit at the film surface and relax away in seconds.
+- The film's gray response at FR2 is a staircase of single frames:
+  1f = light gray, 2f = dark gray, 3f = darker, 7f ≈ black. Duty-cycled
+  micro-alternation and overshoot/pull-back shapes both underperformed
+  single-frame doses here.
+- Clearing a gray needs a 2f black kick before the white drive; a one-way
+  white push leaves residue even at 20 frames.
+- Deep-partial retention needs local inversion cycles before the set: a
+  monotonic 32f push faded after power-off, 2x(8f,8f) flash + 20f set holds.
