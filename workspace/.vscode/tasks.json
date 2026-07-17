@@ -218,6 +218,67 @@
       "problemMatcher": []
     },
     {
+      "label": "Debug: OpenOCD C6 (Active Project, Dedicated Panel)",
+      "type": "shell",
+      "command": "openocd",
+      "args": [
+        "-f",
+        "/workspace/boards/esp32c6-zephyr.cfg",
+        "-c",
+        "init; reset halt; esp appimage_offset 0x0"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "owner": "custom",
+          "pattern": {
+            "regexp": "."
+          },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ".",
+            "endsPattern": "Listening on port 3333 for gdb connections"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Debug: Restart OpenOCD C6 (Active Project)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Debug: Stop OpenOCD",
+        "Debug: OpenOCD C6 (Active Project, Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug: Flash then OpenOCD C6 (Active Project)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Zephyr: Flash Active Project",
+        "Debug: Stop OpenOCD",
+        "Debug: OpenOCD C6 (Active Project, Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug: Prepare ESP32-C6 Session",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Zephyr: Build Active Project",
+        "Debug: OpenOCD C6 (Active Project, Dedicated Panel)"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "Native sim: Build",
       "type": "shell",
       "command": "west",

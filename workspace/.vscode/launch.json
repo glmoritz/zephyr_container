@@ -304,6 +304,205 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Debug ESP32-C6 (as-is)",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Debug: Restart OpenOCD C6 (Active Project)",
+            "postDebugTask": "Debug: Stop OpenOCD",
+            "program": "${workspaceFolder}/zephyr.elf",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 2
+            },
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Force RISC-V rv32 architecture so GDB doesn't default to x86_64",
+                    "text": "set architecture riscv:rv32",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Always use hardware breakpoints (flash/ROM not writable)",
+                    "text": "set breakpoint auto-hw on",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "ESP32-C6 hardware breakpoint count (conservative)",
+                    "text": "set remote hardware-breakpoint-limit 2",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Don't reject breakpoints in regions absent from OpenOCD's memory map",
+                    "text": "set mem inaccessible-by-default off",
+                    "ignoreFailures": false
+                }
+            ],
+            "postRemoteConnectCommands": [
+                {
+                    "description": "Flash binary to device (leaves CPU halted on completion)",
+                    "text": "mon program_esp ${workspaceFolder}/zephyr.bin verify",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Flush GDB register/symbol cache after new flash map",
+                    "text": "maintenance flush register-cache",
+                    "ignoreFailures": false
+                }
+            ],
+            "launchCompleteCommand": "None"
+        },
+        {
+            "name": "Debug ESP32-C6 (flash first, attach)",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Debug: Flash then OpenOCD C6 (Active Project)",
+            "postDebugTask": "Debug: Stop OpenOCD",
+            "program": "${workspaceFolder}/zephyr.elf",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 2
+            },
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set architecture riscv:rv32",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set breakpoint auto-hw on",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set remote hardware-breakpoint-limit 2",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "set mem inaccessible-by-default off",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Accept breakpoints in not-yet-mapped regions",
+                    "text": "set breakpoint pending on",
+                    "ignoreFailures": false
+                }
+            ],
+            "postRemoteConnectCommands": [
+                {
+                    "description": "Reset chip and keep halted — binary already in flash",
+                    "text": "mon reset halt",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "maintenance flush register-cache",
+                    "ignoreFailures": false
+                }
+            ],
+            "launchCompleteCommand": "None"
+        },
+        {
+            "name": "Debug ESP32-C6 (Start OpenOCD)",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Debug: Prepare ESP32-C6 Session",
+            "postDebugTask": "Debug: Stop OpenOCD",
+            "program": "${workspaceFolder}/zephyr.elf",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 2
+            },
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set breakpoint auto-hw on",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "postRemoteConnectCommands": [
+                {
+                    "text": "set architecture riscv:rv32",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "monitor halt",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "monitor reset halt",
+                    "ignoreFailures": false
+                },
+                {
+                    "text": "maintenance flush register-cache",
+                    "ignoreFailures": false
+                }
+            ],
+            "launchCompleteCommand": "None"
+        },
+        {
+            "name": "Debug ESP32-C6 (Attach to running OpenOCD)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zephyr.elf",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 2
+            },
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "text": "set pagination off",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set architecture riscv:rv32",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set breakpoint auto-hw on",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }
