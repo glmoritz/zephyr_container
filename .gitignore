@@ -9,9 +9,11 @@
 # Nested repos with independent git histories — managed separately, not tracked here.
 # hello_eink is the product (remote: glmoritz/zephyr_eink_waveshare).
 # lorawan_uplink is the LoRaWAN product (remote: glmoritz/labsc_zephyr_lorawan).
+# labsc_filament_oven is the oven controller (remote: glmoritz/labsc_filament_oven).
 # openocd-esp32 and Zephyr_ESP32S3-N16R8 are vendored upstream clones.
 # See backup/workspace-fossil-pre-split-2026-05-19.bundle for pre-split history.
 /workspace/projects/hello_eink/
 /workspace/projects/lorawan_uplink/
+/workspace/projects/labsc_filament_oven/
 /workspace/openocd-esp32/
 /workspace/apps/Zephyr_ESP32S3-N16R8/
