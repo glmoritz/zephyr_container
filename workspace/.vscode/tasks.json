@@ -16,7 +16,8 @@
         "reveal": "always",
         "panel": "shared",
         "clear": true
-      }
+      },
+      "problemMatcher": []
     },
     {
       "label": "Zephyr: Build Active Project",
