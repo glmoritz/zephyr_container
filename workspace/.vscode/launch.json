@@ -320,7 +320,7 @@
                 "limit": 2
             },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gdb",
             "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
                 {
@@ -377,7 +377,7 @@
                 "limit": 2
             },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gdb",
             "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
                 {
@@ -434,7 +434,7 @@
                 "limit": 2
             },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gdb",
             "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
                 {
@@ -483,7 +483,7 @@
                 "limit": 2
             },
             "MIMode": "gdb",
-            "miDebuggerPath": "/opt/toolchains/zephyr-sdk-0.17.4/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb",
+            "miDebuggerPath": "${workspaceFolder}/.vscode/.zephyr-tools/xtensa-espressif_esp32s3_zephyr-elf-gdb",
             "miDebuggerServerAddress": "localhost:3333",
             "setupCommands": [
                 {

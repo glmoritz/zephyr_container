@@ -426,6 +426,15 @@ cmd_build() {
 
     if [[ -f "$active_project/debug.conf" ]]; then
         cmake_args+=("-DEXTRA_CONF_FILE=debug.conf")
+
+        # A debug build may also need board-specific devicetree (bench-only
+        # peripherals: indicator LEDs, alternate log routing). Those live in
+        # debug/<sanitized board>.overlay, mirroring how boards/ works, so a
+        # bench overlay for one board is never applied to another.
+        local board_overlay="debug/${board//\//_}.overlay"
+        if [[ -f "$active_project/$board_overlay" ]]; then
+            cmake_args+=("-DEXTRA_DTC_OVERLAY_FILE=$board_overlay")
+        fi
     fi
 
     west_args+=("--")
