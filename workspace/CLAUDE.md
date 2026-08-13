@@ -12,9 +12,34 @@ this file when the two disagree.
 - **Inner repos** = the individual products, under `/workspace/projects/<name>`.
   Each is its own clone, **ignored** by the outer repo. Current ones:
   - `projects/labsc_filament_oven` — PID filament oven, **ESP32-C6 (RISC-V)**
-  - `projects/lorawan_uplink`
+  - `projects/lorawan_uplink` — LoRaWAN via USP/LBM, LR1121, **ESP32-C6**
+  - `projects/lr_fhss_tx` — raw LR-FHSS TX, **Heltec V3 (ESP32-S3 + SX1262)**
+  - `projects/lorawan_join` — OTAA join, AU915 sub-band 3, Heltec V3
+  - `projects/lorawan_lrfhss` — LoRaWAN carried by LR-FHSS (DR7), Heltec V3
   - (`hello_eink` — the e-ink product, **ESP32-S3 (Xtensa)** — is the reference
     for "known working"; same methodology.)
+
+### The three radio projects are not variants of one thing
+
+They use two mutually exclusive stacks, and the split is forced by the tree,
+not by preference:
+
+| Project | Stack | Pin AU915 sub-band | LR-FHSS |
+|---|---|---|---|
+| `lorawan_join` | Zephyr `subsys/lorawan` (loramac-node) | yes | no |
+| `lr_fhss_tx` | Zephyr LoRa driver on lora-basics-modem | n/a | raw PHY only |
+| `lorawan_lrfhss` | USP / LoRa Basics Modem | no | yes, as DR7 |
+
+`subsys/lorawan` compiles only under `CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE`,
+which has no LR-FHSS; Zephyr's lora-basics-modem glue compiles the radio
+drivers but not LBM's LoRaWAN core. So one image cannot do both — hence USP
+(`projects/lorawan_lrfhss`), which vendors the full LBM.
+
+**`lorawan_lrfhss` needs `bash setup.sh` after cloning** — submodules plus two
+patches, one of which (`0002`) breaks every SX126x build without it.
+
+Both Heltec V3 projects are **built and verified by symbol inspection, never
+run on hardware** — no board was attached when they were written.
 - `/workspace/apps` is course/training examples, not products.
 
 Everything runs **inside the container**. Host paths (`/home/guilherme/...`)
