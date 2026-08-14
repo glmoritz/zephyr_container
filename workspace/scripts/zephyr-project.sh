@@ -84,13 +84,33 @@ list_projects() {
     local root
     local candidate
 
+    # A project is a directory holding a CMakeLists.txt. We search three levels
+    # deep rather than one so that a repo can group several applications that
+    # share vendored modules — see projects/labsc_lora/apps/, where four LoRa
+    # applications share a single copy of the USP submodules instead of each
+    # carrying its own 18 MB clone.
+    #
+    # Two prunes keep the extra depth from turning into noise:
+    #
+    #   modules/, build/, .git/  are never projects. modules/usp_zephyr has a
+    #                            CMakeLists.txt of its own — it is a Zephyr
+    #                            module, not an application — and would
+    #                            otherwise be listed as one.
+    #
+    #   a matched project        is not descended into, so nothing nested
+    #                            underneath an application can shadow it.
+    #
+    # `prj.conf` would be the tempting discriminator instead of pruning by
+    # name, but apps/02_demo_cmake has none, and dropping it from the picker
+    # to simplify this function is not a trade worth making.
     for root in "$workspace_root/projects" "$workspace_root/apps"; do
         [[ -d "$root" ]] || continue
 
         while IFS= read -r candidate; do
-            [[ -f "$candidate/CMakeLists.txt" ]] || continue
             printf '%s\n' "$candidate"
-        done < <(find "$root" -mindepth 1 -maxdepth 1 -type d | sort)
+        done < <(find "$root" -mindepth 1 -maxdepth 3 -type d \
+                     \( -name modules -o -name build -o -name .git \) -prune -o \
+                     -type d -exec test -f '{}/CMakeLists.txt' \; -print -prune | sort)
     done
 }
 
