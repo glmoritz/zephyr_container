@@ -172,3 +172,80 @@ sidesteps the mode-1 defect. Audit tool: `scripts/lut_check.py`.
   white push leaves residue even at 20 frames.
 - Deep-partial retention needs local inversion cycles before the set: a
   monotonic 32f push faded after power-off, 2x(8f,8f) flash + 20f set holds.
+
+## 6. Fast drive — inkboy port (2026-10-19)
+
+Port of `kuslota/inkboy`'s SSD1681 "mixed scan" (itself after paperboy's
+per-pixel driving) to our SSD1677: `CONFIG_LLSS_EPD_FAST_DRIVE`, engine in
+the driver ("Fast drive" section), `epd f*` shell commands. Unlike paperboy,
+inkboy keeps the COG — every trick is a controller feature we also have:
+
+- one-frame custom LUT (`0x32`), mode 2, transition-indexed like
+  `lut_du_deep`: BW = target T, RED = T ^ A (A = pixel still has budget) →
+  rows 00/11 HOLD, 01 one VSL frame, 10 one VSH1 frame;
+- rails up once (`0x22=0xC0`), then `0x22=0x0C` per scan;
+- display option `0x37` all zero at session entry — **RAM ping-pong off**.
+  This panel comes up with mode-2 ping-pong ON (the vendor partial writes
+  only `0x24` and leans on it). Left on, scans after the first don't see
+  the planes as written: on glass the box flickered faintly and ended white.
+  With `epd reg 37 00 00 00 00 00 00` first, the same `fdrive` drove it
+  solid black (glass-tested 2026-10-19). Our other paths write both planes
+  explicitly, and the OTP partial's timing is the same with `0x37` at its
+  boot value, all zero, or only ping-pong set (413 ms each, measured);
+- per-pixel pulse budget (bit-sliced, 4 planes), Y-windowed RAM writes of
+  only the rows whose target/mask changed, one all-HOLD scan at the end.
+
+**Status: on at boot** — every partial refresh goes through the engine
+(first scan synchronous, the rest spent by the display thread); fulls are
+unchanged, and the partial floor still forces a full every 20 updates.
+`epd fmode off` falls back to the OTP partial at runtime. Defaults: k=8
+black pulses, **w=15 white pulses**, 1 frame/scan, FR2, HOLD ending, RED
+delta writes, rails kept up.
+
+Frame time per LUT FR nibble (bare all-HOLD scans, `epd fsweep`): ~25 Hz
+per unit up to 8 — FR0 67.5 ms, FR1 40.4, **FR2 20.2**, FR3 13.5, FR4 10.1,
+FR6 6.8, FR8 5.1; FRC 9.2, FRF 5.5 (saturates). Activation overhead with the
+rails up ≈ 0.2 ms. **Rail power-up (`0xC0`) = 83 ms** — so the rails stay up
+and a full re-raises them right after it finishes (fast mode only).
+
+`epd fbench` (k=w=8 pulses, 1 frame/scan, FR2, RED delta writes):
+
+| change | fast: first scan on glass | fast: all pulses + HOLD | OTP partial (0xFC) |
+|---|---|---|---|
+| 200×64 box | **24.9 ms** | 197 ms | 468 ms |
+| full screen | 66.6 ms | 366 ms | 468 ms |
+
+With w=15 the first scan is unchanged; a change to white needs 15 scans +
+HOLD ≈ 330 ms of background drive (a real UI band after boot: first scan
+35 ms, all 15 scans 611 ms including RAM writes).
+
+Real press feedback (`epd press <btn>`, `fmode on`, scan 1 synchronous,
+the rest spent by the display thread in the background):
+**request → first scan done = 65 ms** (LVGL band 40 + panel 24), vs 509 ms
+(40 + 469) on the OTP partial. Remaining device-side cost is LVGL:
+~40 ms per band, ~215–226 ms for a full server frame.
+
+Glass (2026-10-19, white field, black boxes driven with k=8, then erased):
+
+| erase | result |
+|---|---|
+| 8 black pulses (white → black) | solid black |
+| 8 white pulses | very faint mark left |
+| 15 white pulses | **clean** — the default |
+| 12 white pulses | not tested (that erase never ran: a command was lost on the serial link) |
+
+The film resists the white direction here as in the gray calibration
+(§5 notes). w=15 vs k=8 is not DC-balanced per black↔white cycle; the
+periodic full (floor 20) is the hygiene. An opposite kick before the white
+drive (as in `lut_gray_revert`) might clear in fewer pulses — untried.
+
+Open:
+- After a fast session (rails left up, our one-frame LUT in the register),
+  the OTP partial `0xFC` runs in **107 ms** instead of 413 ms, every time,
+  also after `epd fpoff`; it is not the `0x37` write (ruled out above). On
+  glass that run erased a box worse than 8 fast white pulses. Irrelevant
+  while fast mode is on (that path doesn't run); matters only if
+  `epd fmode off` is used without a reboot. Not investigated further.
+- Ghost build-up over many fast updates; retention after power cut
+  (expected DU-grade, i.e. fades like the OTP partial — the full / deep
+  partial remain the consolidation).
