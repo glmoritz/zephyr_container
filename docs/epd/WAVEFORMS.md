@@ -195,12 +195,29 @@ inkboy keeps the COG — every trick is a controller feature we also have:
 - per-pixel pulse budget (bit-sliced, 4 planes), Y-windowed RAM writes of
   only the rows whose target/mask changed, one all-HOLD scan at the end.
 
-**Status: on at boot** — every partial refresh goes through the engine
-(first scan synchronous, the rest spent by the display thread); fulls are
-unchanged, and the partial floor still forces a full every 20 updates.
-`epd fmode off` falls back to the OTP partial at runtime. Defaults: k=8
-black pulses, **w=15 white pulses**, 1 frame/scan, FR2, HOLD ending, RED
-delta writes, rails kept up.
+**Status (2026-10-20): DISABLED** — `CONFIG_LLSS_EPD_FAST_DRIVE` now
+defaults to `n` (engine compiled out, 240 KB SPIRAM back); partials are the
+OTP `0xFC` again. Reason: after a day on by default (k=8, w=15), the
+screensaver clock's big 7-segment digits showed **many gray stains** —
+residue where segments had been redrawn by fast scans. Not debugged.
+Built in for experiments (`CONFIG_LLSS_EPD_FAST_DRIVE=y`), it is off at
+boot until `epd fmode on`.
+
+Leads for whoever picks this up (none verified):
+- The box tests were one black→white cycle on a fresh full; the clock
+  redraws the same segments many times, so the residue builds over cycles.
+  First reproduce: `epd pattern digits`-style blocks toggled N times with
+  `fdrive`, then compare to the same N with the OTP partial.
+- k=8 / w=15 is not DC-balanced per cycle; residual DC could be the stain.
+  Try k=w (e.g. 12/12) and see whether stains move.
+- Every white drive is one-way; the gray calibration (§5) found a one-way
+  white push leaves residue and needed an opposite kick first
+  (`lut_gray_revert`). Same likely here: per-pixel black kick before white.
+- Fast-scanned pixels are DU-grade (shallow); the deep partial (§5) needed
+  inversion cycles for stable states. A periodic `lut_du_deep` consolidation
+  of fast-driven areas may be the real answer.
+- The OTP partial ran 107 ms (not 413) after any fast session (Open, below);
+  irrelevant now that the engine is out, but unexplained.
 
 Frame time per LUT FR nibble (bare all-HOLD scans, `epd fsweep`): ~25 Hz
 per unit up to 8 — FR0 67.5 ms, FR1 40.4, **FR2 20.2**, FR3 13.5, FR4 10.1,
